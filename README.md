@@ -8,8 +8,8 @@
 
 ## TODO
 
-- [] Better error handling
-- [] Themes
+- [ ] Better error handling
+- [ ] Themes
 
 ## Installation
 
