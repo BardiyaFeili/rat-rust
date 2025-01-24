@@ -1,0 +1,8 @@
+[package]
+name = "rat"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+colored = "3.0.0"
+syntect = "5.2.0"
