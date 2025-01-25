@@ -1,22 +1,4 @@
-# Rat, a simple Bat or Cat alternative
+# Rat, a simple Cat alternative
 
-## Features
-
-- Support for multiple files
-- Syntax highlighting with [syntect](https://github.com/trishume/syntect)
-- Good UI
-
-## TODO
-
-- [ ] Better error handling
-- [ ] Themes
-
-## Installation
-
-```bash
-git clone https://github.com/BardiyaFeili/rat-rust.git
-
-cd rat-rust
-
-cargo build --release
-```
+A simple Rust app like cat or bat written in rust
+Made mainly for learning purposes
