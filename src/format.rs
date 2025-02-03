@@ -1,7 +1,6 @@
+use crate::args::File;
 use colored::Colorize;
 use std::collections::HashMap;
-
-use crate::args::File;
 
 pub fn format_content(table: &HashMap<String, bool>, file: &mut File) {
     let mut content = file.content.clone();
