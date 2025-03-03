@@ -1,5 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
+    error::Error,
     fs,
 };
 
@@ -11,17 +12,16 @@ pub struct File {
 }
 
 impl File {
-    fn from(name: String) -> File {
-        let content =
-            fs::read_to_string(&name).unwrap_or_else(|e| format!("Failed to read file: {}", e));
+    fn from(name: String) -> Result<File, Box<dyn Error>> {
+        let content = fs::read_to_string(&name)?;
         let len = content.lines().count();
 
-        File {
+        Ok(File {
             name,
             content,
             len,
             range: (1, len),
-        }
+        })
     }
 
     fn add_range(&mut self, range: &str) {
@@ -38,7 +38,8 @@ impl File {
     }
 }
 
-pub fn parse_args(args: Vec<String>) -> (Vec<File>, HashMap<String, bool>) {
+type ParseArgsResult = Result<(Vec<File>, HashMap<String, bool>), Box<dyn Error>>;
+pub fn parse_args(args: Vec<String>) -> ParseArgsResult {
     let mut flags: HashSet<String> = HashSet::new();
     let mut opts: HashSet<char> = HashSet::new();
     let mut files: Vec<File> = Vec::new();
@@ -77,14 +78,15 @@ pub fn parse_args(args: Vec<String>) -> (Vec<File>, HashMap<String, bool>) {
                 is_range = false;
                 continue;
             } else {
-                panic!("the range cant be before a file");
+                println!("the range cant be before a file");
+                continue;
             }
         } else {
-            files.push(File::from(arg));
+            files.push(File::from(arg)?);
         }
     }
 
-    (files, gen_args(opts, flags))
+    Ok((files, gen_args(opts, flags)))
 }
 
 fn gen_args(opts: HashSet<char>, flags: HashSet<String>) -> HashMap<String, bool> {
@@ -99,6 +101,7 @@ fn gen_args(opts: HashSet<char>, flags: HashSet<String>) -> HashMap<String, bool
 
     for opt in opts {
         match opt {
+            'H' => args.insert("help".to_string(), true),
             'n' => args.insert("no_number".to_string(), true),
             'h' => args.insert("no_header".to_string(), true),
             'f' => args.insert("no_formatting".to_string(), true),
