@@ -78,7 +78,7 @@ pub fn parse_args(args: Vec<String>) -> ParseArgsResult {
                 is_range = false;
                 continue;
             } else {
-                println!("the range cant be before a file");
+                println!("The range can't be before a file");
                 continue;
             }
         } else {
