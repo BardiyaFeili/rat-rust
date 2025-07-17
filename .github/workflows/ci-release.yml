@@ -23,11 +23,9 @@ jobs:
           - x86_64-pc-windows-msvc
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Cache dependencies & build artifacts
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -35,60 +33,54 @@ jobs:
             target
           key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Setup Rust targets
-        run: rustup target add ${{ matrix.target }}
+      - run: rustup target add ${{ matrix.target }}
 
-      - name: Run tests
-        run: cargo test --target ${{ matrix.target }} --locked --verbose
+      - run: cargo test --target ${{ matrix.target }} --locked --verbose
 
-      - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
+      - run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Package binary
-        run: |
+      - run: |
           EXT=""
           [ "${{ matrix.os }}" = windows-latest ] && EXT=".exe"
-          SRC="target/${{ matrix.target }}/release/${PROJECT}${EXT}"
-          DST="${PROJECT}-${{ matrix.target }}${EXT}"
+          SRC="target/${{ matrix.target }}/release/${{ env.PROJECT }}${EXT}"
+          DST="${{ env.PROJECT }}-${{ matrix.target }}${EXT}"
           cp "$SRC" "$DST"
           echo "Packaged: $DST"
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.target }}
-          path: "${{ PROJECT }}-${{ matrix.target }}*"
+          path: "${{ env.PROJECT }}-${{ matrix.target }}*"
+
   release:
     name: Create Release (on tag)
+    runs-on: ubuntu-latest
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    env:
+      PROJECT: rat
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: ./artifacts
           merge-multiple: true
 
-      - name: Generate SHA‑256 checksum files
-        run: |
+      - run: |
           cd artifacts
           for file in *; do
             sha256sum "$file" > "$file".sha256
           done
 
-      - name: Create Release & Upload Artifacts
-        uses: houseabsolute/actions-rust-release@v0
+      - uses: houseabsolute/actions-rust-release@v0
         with:
           executable-name: ${{ env.PROJECT }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload checksum files
-        uses: svenstaro/upload-release-action@v2
+      - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
