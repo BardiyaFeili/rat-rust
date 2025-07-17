@@ -8,7 +8,7 @@ on:
     branches: ["**"]
 
 env:
-  PROJECT: your_binary_name # 🔧 Replace this with your actual binary name from Cargo.toml
+  PROJECT: rat
 
 jobs:
   build:
