@@ -8,7 +8,7 @@ on:
     branches: ["**"]
 
 env:
-  PROJECT: rat # replace with the binary name in Cargo.toml
+  PROJECT: your_binary_name # 🔧 Replace this with your actual binary name from Cargo.toml
 
 jobs:
   build:
@@ -26,16 +26,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Cache Cargo registry & build artifacts
+      - name: Cache dependencies & build artifacts
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock') }} # speeds up rebuilds :contentReference[oaicite:1]{index=1}
+          key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install Rust toolchain
+      - name: Setup Rust targets
         run: rustup target add ${{ matrix.target }}
 
       - name: Run tests
@@ -47,45 +47,43 @@ jobs:
       - name: Package binary
         run: |
           EXT=""
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then EXT=".exe"; fi
-          BIN=${PROJECT}${EXT}
-          SRC=target/${{ matrix.target }}/release/$BIN
-          DST=${PROJECT}-${{ matrix.target }}${EXT}
+          [ "${{ matrix.os }}" = windows-latest ] && EXT=".exe"
+          SRC="target/${{ matrix.target }}/release/${PROJECT}${EXT}"
+          DST="${PROJECT}-${{ matrix.target }}${EXT}"
           cp "$SRC" "$DST"
           echo "Packaged: $DST"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}
-          path: ${PROJECT}-${{ matrix.target }}*
-
+          name: build-${{ matrix.target }}
+          path: "${{ PROJECT }}-${{ matrix.target }}*"
   release:
+    name: Create Release (on tag)
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
         with:
           path: ./artifacts
-          name: ${{ matrix.target }} # this downloads each built binary
+          merge-multiple: true
 
-      - name: Generate SHA-256 checksums
+      - name: Generate SHA‑256 checksum files
         run: |
           cd artifacts
-          for f in *; do
-            sha256sum "$f" > "$f".sha256
+          for file in *; do
+            sha256sum "$file" > "$file".sha256
           done
 
-      - name: Create GitHub Release and upload artifacts
+      - name: Create Release & Upload Artifacts
         uses: houseabsolute/actions-rust-release@v0
         with:
           executable-name: ${{ env.PROJECT }}
-          target: x86_64-unknown-linux-gnu # action infers per-artifact uploads
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -94,5 +92,4 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
-          file: |
-            artifacts/*.sha256
+          file: artifacts/*.sha256
