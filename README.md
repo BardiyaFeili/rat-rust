@@ -56,4 +56,3 @@ Ranges are applied per file, so each file can have a different range or no range
 Example:
 
 rat file.txt -r 10:50
-cat \[options\] \[file1\] -r starting:ending
